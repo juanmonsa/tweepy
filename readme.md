@@ -1,3 +1,3 @@
 # Tweepy Project
 
-Twitter API data
+Twitter API data analysis and visualization
