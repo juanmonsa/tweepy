@@ -4,9 +4,12 @@ from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 
+from textblob import TextBlob
+
 import twitter_credential
 import numpy as np
 import pandas as pd
+import re
 import matplotlib.pyplot as plt
 
 
@@ -98,6 +101,19 @@ class TweetAnalyzer():
     """
     Analizyng and categorizing content from tweets.
     """
+    def clean_tweet(self, tweet):
+       return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+
+    def analyze_sentiment(self, tweet):
+        analysis = TextBlob(self.clean_tweet(tweet))
+
+        if analysis.sentiment.polarity > 0:
+            return 1
+        elif analysis.sentiment.polarity == 0:
+            return 0
+        else:
+            return -1
+
     def tweets_to_dataframe(self, tweets):
         df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['tweets'])
         df['id'] = np.array([tweet.id for tweet in tweets])
@@ -116,31 +132,12 @@ if __name__ == "__main__":
     api = twitter_client.get_twitter_client_api()
 
     tweets = api.user_timeline(screen_name="realDonaldTrump", count=200)
-    
     df = tweet_analyzer.tweets_to_dataframe(tweets)
-    #print(df.head(10))
 
-    # Get average length over all tweets
-    print(np.mean(df['len']))
+    df['sentiment'] = np.array([tweet_analyzer.analyze_sentiment(tweet) for tweet in df['tweets']])
 
-    # Get then number of likes for the most liked tweet
-    print(np.max(df['likes']))
+    print(df.head(10))
 
-    # Get then number of retweets for the most retweeted tweet
-    print(np.max(df['retweets']))
-
-    # # Time series
-    # time_likes = pd.Series(data=df['likes'].values, index=df['date'])
-    # time_likes.plot(figsize=(16,4), color='r')
-    # plt.show()
-
-    # time_retweets = pd.Series(data=df['retweets'].values, index=df['date'])
-    # time_retweets.plot(figsize=(16,4), color='r')
-    # plt.show()
-
-    time_retweets = pd.Series(data=df['retweets'].values, index=df['date'])
-    time_retweets.plot(figsize=(16,4), color='r')
-    plt.show()
 
 
 
